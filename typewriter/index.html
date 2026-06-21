@@ -86,6 +86,22 @@
       "Knowing is half the battle!"
     ];
 
+    // Keystroke sounds. One sound is chosen per phrase and played for
+    // every letter of that phrase; the next phrase uses a different one.
+    var SOUNDS = [
+      "../sounds/mixkit-atm-cash-machine-key-press-2841.mp3",
+      "../sounds/mixkit-bubble-pop-up-alert-notification-2357.mp3",
+      "../sounds/mixkit-correct-answer-tone-2870.mp3",
+      "../sounds/mixkit-digital-quick-tone-2866.mp3",
+      "../sounds/mixkit-dry-pop-up-notification-alert-2356.mp3",
+      "../sounds/mixkit-elevator-tone-2863.mp3",
+      "../sounds/mixkit-gaming-lock-2848.mp3",
+      "../sounds/mixkit-interface-option-select-2573.mp3",
+      "../sounds/mixkit-light-button-2580.mp3",
+      "../sounds/mixkit-message-pop-alert-2354.mp3",
+      "../sounds/mixkit-sci-fi-click-900.mp3"
+    ];
+
     var TYPE_DELAY_MS    = 10;   // base delay between characters
     var TYPE_JITTER_MS   = 5;    // random extra delay (0..this) per char
     var PAUSE_AFTER_MS   = 5000; // pause after a snippet finishes, before clearing
@@ -102,12 +118,31 @@
     var snippetIndex   = 0;
     var charIndex      = 0;
     var screenSnippets = 0; // how many snippets typed since the last clear
+    var soundIndex     = -1; // index into SOUNDS for the current phrase
+
+    // Pick a sound for the current phrase, different from the last one used.
+    function pickSound() {
+      var next;
+      do {
+        next = Math.floor(Math.random() * SOUNDS.length);
+      } while (next === soundIndex && SOUNDS.length > 1);
+      soundIndex = next;
+    }
+
+    // Play the current phrase's sound, allowing rapid overlapping playback.
+    function playKeySound() {
+      var audio = new Audio(SOUNDS[soundIndex]);
+      audio.play().catch(function () {}); // ignore autoplay-policy rejections
+    }
+
+    pickSound();
 
     function step() {
       var snippet = SNIPPETS[snippetIndex];
 
       if (charIndex < snippet.length) {
         textNode.appendData(snippet.charAt(charIndex));
+        playKeySound();
         charIndex++;
         setTimeout(step, TYPE_DELAY_MS + Math.random() * TYPE_JITTER_MS);
       } else {
@@ -115,6 +150,7 @@
         charIndex = 0;
         snippetIndex = (snippetIndex + 1) % SNIPPETS.length;
         screenSnippets++;
+        pickSound(); // different sound for the next phrase
 
         setTimeout(function () {
           if (screenSnippets < SNIPPETS_PER_SCREEN) {
