@@ -49,10 +49,36 @@
     0%, 50%   { opacity: 1; }
     50.01%, 100% { opacity: 0; }
   }
+
+  /* Tap-to-start overlay: gathers the user gesture browsers require
+     before audio is allowed to play. Hidden once tapped. */
+  #overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+    font-size: 72px;
+    text-align: center;
+    cursor: pointer;
+    z-index: 10;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  #overlay.hidden {
+    display: none;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%      { opacity: 0.4; }
+  }
 </style>
 </head>
 <body>
   <pre id="screen"><span id="text"></span><span id="cursor"></span></pre>
+  <div id="overlay">Tap to start</div>
 
   <script>
   (function () {
@@ -166,7 +192,25 @@
       }
     }
 
-    step();
+    // Wait for a tap before starting. The tap is a user gesture, which
+    // unlocks audio playback under browser autoplay policies. We prime one
+    // sound (muted) during the gesture so later keystrokes can play freely.
+    var overlay = document.getElementById("overlay");
+
+    function start() {
+      overlay.removeEventListener("click", start);
+      overlay.removeEventListener("touchstart", start);
+      overlay.classList.add("hidden");
+
+      var primer = new Audio(SOUNDS[soundIndex]);
+      primer.muted = true;
+      primer.play().catch(function () {});
+
+      step();
+    }
+
+    overlay.addEventListener("click", start);
+    overlay.addEventListener("touchstart", start);
   })();
   </script>
 </body>
