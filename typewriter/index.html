@@ -102,12 +102,18 @@
     })();
 
     var SNIPPETS = [
+      "Jeremy appreciates all his caregivers! Thank you!",
+      "Shall we play a game?\n1. Chess\n2. Global Thermonuclear War",
       "Jeremy sometimes experiments with growing out his mustache and beard. He wants to look like Evil Spock from Star Trek.",
       "Pentagon IP address identified. Commencing hack.",
       "Wonder Twin powers, activate!",
       "By the power of Greyskull!",
       "Knowing is half the battle!",
-      "Jeremy's name... is Neo! Well actually it's Jeremy. But call him Neo if you want to."
+      "Jeremy's name... is Neo! Well actually it's Jeremy. But call him Neo if you want to.",
+      "Ms. Rachel could totally take Blippie in a fight.",
+      "To infinity, and beyond!",
+      "Can you think of something... green?",
+      "Amarillo!\nNaranja!\nAzul!"
     ];
 
     var SOUNDS = [
@@ -139,14 +145,48 @@
     var screenSnippets = 0; // how many snippets typed since the last clear
     var soundIndex     = -1; // index into SOUNDS for the current phrase
 
+    // ----------------------------------------------------------------
+    //  Audio via the Web Audio API.
+    //  We deliberately do NOT use a fresh `new Audio()` per keystroke:
+    //  browsers cap the number of live HTMLMediaElements, and once that
+    //  ceiling is hit play() silently fails and the sound "deactivates".
+    //  Instead we decode each clip once into a buffer and fire a cheap,
+    //  disposable BufferSource node for every key press.
+    // ----------------------------------------------------------------
+    var AudioCtx = window.AudioContext || window.webkitAudioContext;
+    var audioCtx = null;
+    var buffers = new Array(SOUNDS.length); // decoded AudioBuffers, by index
+
+    function loadBuffer(i) {
+      fetch(SOUNDS[i])
+        .then(function (resp) { return resp.arrayBuffer(); })
+        .then(function (data) {
+          // Callback form for Safari, which lacks the promise-based API.
+          audioCtx.decodeAudioData(data, function (buf) {
+            buffers[i] = buf;
+          }, function () {});
+        })
+        .catch(function () {}); // ignore fetch/decode failures
+    }
+
     function pickSound() {
       soundIndex = (soundIndex + 1) % SOUNDS.length;
     }
 
     function playKeySound() {
-      var audio = new Audio(SOUNDS[soundIndex]);
-      audio.volume = 0.5; // half volume
-      audio.play().catch(function () {}); // ignore autoplay-policy rejections
+      if (!audioCtx) return;
+      // Browsers can suspend the context (tab backgrounded, etc.); nudge it.
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      var buf = buffers[soundIndex];
+      if (!buf) return; // not decoded yet — just skip this click
+
+      var source = audioCtx.createBufferSource();
+      source.buffer = buf;
+      var gain = audioCtx.createGain();
+      gain.gain.value = 0.5; // half volume
+      source.connect(gain);
+      gain.connect(audioCtx.destination);
+      source.start(0);
     }
 
     pickSound();
@@ -181,8 +221,8 @@
     }
 
     // Wait for a tap before starting. The tap is a user gesture, which
-    // unlocks audio playback under browser autoplay policies. We prime one
-    // sound (muted) during the gesture so later keystrokes can play freely.
+    // unlocks audio playback under browser autoplay policies. We create the
+    // AudioContext here (inside the gesture) and start decoding every clip.
     var overlay = document.getElementById("overlay");
 
     function start() {
@@ -190,9 +230,11 @@
       overlay.removeEventListener("touchstart", start);
       overlay.classList.add("hidden");
 
-      var primer = new Audio(SOUNDS[soundIndex]);
-      primer.muted = true;
-      primer.play().catch(function () {});
+      if (AudioCtx) {
+        audioCtx = new AudioCtx();
+        if (audioCtx.state === "suspended") audioCtx.resume();
+        for (var i = 0; i < SOUNDS.length; i++) loadBuffer(i);
+      }
 
       step();
     }
