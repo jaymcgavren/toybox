@@ -146,13 +146,10 @@
     var screenSnippets = 0; // how many snippets typed since the last clear
     var soundIndex     = -1; // index into SOUNDS for the current phrase
 
-    // Pick a sound for the current phrase, different from the last one used.
+    // Advance to the next sound for the current phrase, cycling through
+    // SOUNDS in order and wrapping back to the start.
     function pickSound() {
-      var next;
-      do {
-        next = Math.floor(Math.random() * SOUNDS.length);
-      } while (next === soundIndex && SOUNDS.length > 1);
-      soundIndex = next;
+      soundIndex = (soundIndex + 1) % SOUNDS.length;
     }
 
     // Play the current phrase's sound, allowing rapid overlapping playback.
