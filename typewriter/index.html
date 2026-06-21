@@ -145,6 +145,7 @@
 
     function playKeySound() {
       var audio = new Audio(SOUNDS[soundIndex]);
+      audio.volume = 0.5; // half volume
       audio.play().catch(function () {}); // ignore autoplay-policy rejections
     }
 
