@@ -155,7 +155,7 @@
 
       if (charIndex < snippet.length) {
         textNode.appendData(snippet.charAt(charIndex));
-        if (charIndex % 4 === 0) playKeySound(); // sound on every 4th letter
+        if (charIndex % 5 === 0) playKeySound(); // sound on every 4th letter
         charIndex++;
         setTimeout(step, TYPE_DELAY_MS + Math.random() * TYPE_JITTER_MS);
       } else {
