@@ -101,19 +101,15 @@
       );
     })();
 
-    // ----------------------------------------------------------------
-    //  Configuration
-    // ----------------------------------------------------------------
     var SNIPPETS = [
       "Jeremy sometimes experiments with growing out his mustache and beard. He wants to look like Evil Spock from Star Trek.",
       "Pentagon IP address identified. Commencing hack.",
       "Wonder Twin powers, activate!",
       "By the power of Greyskull!",
-      "Knowing is half the battle!"
+      "Knowing is half the battle!",
+      "Jeremy's name... is Neo! Well actually it's Jeremy. But call him Neo if you want to."
     ];
 
-    // Keystroke sounds. One sound is chosen per phrase and played for
-    // every letter of that phrase; the next phrase uses a different one.
     var SOUNDS = [
       "../sounds/mixkit-atm-cash-machine-key-press-2841.mp3",
       "../sounds/mixkit-bubble-pop-up-alert-notification-2357.mp3",
@@ -132,9 +128,6 @@
     var TYPE_JITTER_MS   = 5;    // random extra delay (0..this) per char
     var PAUSE_AFTER_MS   = 5000; // pause after a snippet finishes, before clearing
 
-    // ----------------------------------------------------------------
-    //  Engine
-    // ----------------------------------------------------------------
     var textEl   = document.getElementById("text");
     var textNode = document.createTextNode("");
     textEl.appendChild(textNode);
@@ -146,13 +139,10 @@
     var screenSnippets = 0; // how many snippets typed since the last clear
     var soundIndex     = -1; // index into SOUNDS for the current phrase
 
-    // Advance to the next sound for the current phrase, cycling through
-    // SOUNDS in order and wrapping back to the start.
     function pickSound() {
       soundIndex = (soundIndex + 1) % SOUNDS.length;
     }
 
-    // Play the current phrase's sound, allowing rapid overlapping playback.
     function playKeySound() {
       var audio = new Audio(SOUNDS[soundIndex]);
       audio.play().catch(function () {}); // ignore autoplay-policy rejections
