@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>kiosk</title>
+<style>
+  /* ---- Tunable colors (change these two lines to re-theme) ---- */
+  :root {
+    --fg: #00ff00;   /* bright green text       */
+    --bg: #000000;   /* black background        */
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: var(--bg);
+    overflow: hidden;
+  }
+
+  #screen {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 1rem;
+    width: 100%;
+    height: 100%;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: "DejaVu Sans Mono", "Liberation Mono", Consolas, monospace;
+    font-size: 72px;
+    line-height: 1.3;
+    white-space: pre-wrap;     /* wrap long lines, preserve newlines */
+    word-break: break-word;
+    overflow: hidden;          /* we trim old text instead of scrolling */
+  }
+
+  /* Solid block cursor that hard-blinks like a terminal. */
+  #cursor {
+    display: inline-block;
+    width: 0.6em;
+    height: 1.05em;
+    margin-left: 1px;
+    background: var(--fg);
+    vertical-align: text-bottom;
+    animation: blink 1s steps(1) infinite;
+  }
+  @keyframes blink {
+    0%, 50%   { opacity: 1; }
+    50.01%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body>
+  <pre id="screen"><span id="text"></span><span id="cursor"></span></pre>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // ----------------------------------------------------------------
+    //  Random text color (re-rolled on every load)
+    //  Constraint: red + green + blue must total at least 255, so the
+    //  text never comes out too dark to read against the black bg.
+    // ----------------------------------------------------------------
+    (function () {
+      var r, g, b;
+      do {
+        r = Math.floor(Math.random() * 256);
+        g = Math.floor(Math.random() * 256);
+        b = Math.floor(Math.random() * 256);
+      } while (r + g + b < 255);
+      document.documentElement.style.setProperty(
+        "--fg", "rgb(" + r + ", " + g + ", " + b + ")"
+      );
+    })();
+
+    // ----------------------------------------------------------------
+    //  Configuration
+    // ----------------------------------------------------------------
+    var SNIPPETS = [
+      "Jeremy sometimes experiments with growing out his mustache and beard. He wants to look like Evil Spock from Star Trek.",
+      "Pentagon IP address identified. Commencing hack.",
+      "Wonder Twin powers, activate!",
+      "By the power of Greyskull!",
+      "Knowing is half the battle!"
+    ];
+
+    var TYPE_DELAY_MS    = 10;   // base delay between characters
+    var TYPE_JITTER_MS   = 5;    // random extra delay (0..this) per char
+    var PAUSE_AFTER_MS   = 5000; // pause after a snippet finishes, before clearing
+
+    // ----------------------------------------------------------------
+    //  Engine
+    // ----------------------------------------------------------------
+    var textEl   = document.getElementById("text");
+    var textNode = document.createTextNode("");
+    textEl.appendChild(textNode);
+
+    var SNIPPETS_PER_SCREEN = 2; // snippets typed before clearing
+
+    var snippetIndex   = 0;
+    var charIndex      = 0;
+    var screenSnippets = 0; // how many snippets typed since the last clear
+
+    function step() {
+      var snippet = SNIPPETS[snippetIndex];
+
+      if (charIndex < snippet.length) {
+        textNode.appendData(snippet.charAt(charIndex));
+        charIndex++;
+        setTimeout(step, TYPE_DELAY_MS + Math.random() * TYPE_JITTER_MS);
+      } else {
+        // Finished this snippet: pause so it can be read.
+        charIndex = 0;
+        snippetIndex = (snippetIndex + 1) % SNIPPETS.length;
+        screenSnippets++;
+
+        setTimeout(function () {
+          if (screenSnippets < SNIPPETS_PER_SCREEN) {
+            // More to type on this screen: add a blank line and keep going.
+            textNode.appendData("\n\n");
+          } else {
+            // Screen full: clear and start a fresh screen.
+            textNode.data = "";
+            screenSnippets = 0;
+          }
+          step();
+        }, PAUSE_AFTER_MS);
+      }
+    }
+
+    step();
+  })();
+  </script>
+</body>
+</html>
